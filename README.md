@@ -35,10 +35,11 @@ Add to your `config.toml`:
 
 Add to your `config.yaml`:
 
-```toml
+```yaml
 module:
-  module.imports:
-    path: "github.com/rubenstorm/stormmap"
+  imports:
+    - path: github.com/rubenstorm/stormmap
+
 ```
 
 ---
