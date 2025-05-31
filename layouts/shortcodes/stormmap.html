@@ -1,0 +1,126 @@
+{{/*
+StormMap – A modern, flexible and minimalist sitemap shortcode for Hugo
+Version: 1.3.6
+Author: Ruben Storm
+
+📦 Usage:
+  {{< stormmap >}} — default minimal sitemap with branding
+  {{< stormmap branding="false" >}} — disable footer branding
+  {{< stormmap design="color" >}} — colorful visual sitemap
+  {{< stormmap design="nostr" >}} — nostr-inspired sitemap with inline lightning icons
+  {{< stormmap design="green" >}} — green variant
+  {{< stormmap design="red" >}}, {{< stormmap design="blue" >}}, {{< stormmap design="orange" >}}
+
+🔧 Params:
+  branding: "true" | "false" (default: "true")
+  design: "minimal" | "color" | "nostr" | "green" | "red" | "blue" | "orange" (default: "minimal")
+*/}}
+
+{{ $rawBranding := .Get "branding" }}
+{{ $brandingParam := "" }}
+{{ if not $rawBranding }}
+  {{ $brandingParam = "true" }}
+{{ else }}
+  {{ $brandingParam = lower (printf "%v" $rawBranding) }}
+{{ end }}
+{{ $showBranding := eq $brandingParam "true" }}
+
+{{ $rawDesign := .Get "design" }}
+{{ $design := default "minimal" (lower (printf "%v" $rawDesign)) }}
+
+{{/* Define color schemes per design */}}
+{{ $designColors := dict
+  "color" (dict "section" "#3366cc" "page" "#666")
+  "green" (dict "section" "#00aa55" "page" "#66cc88")
+  "red" (dict "section" "#cc3333" "page" "#ff6666")
+  "blue" (dict "section" "#3366cc" "page" "#6699ff")
+  "orange" (dict "section" "#ff9900" "page" "#ffcc66")
+}}
+
+{{ define "stormmap_recursive" }}
+  {{ $pages := .Pages }}
+  {{ $design := .Design }}
+  {{ $designColors := .DesignColors }}
+  <ul style="list-style: none; padding-left: 1rem; margin: 0;">
+    {{ range where $pages "Params.hideStormMap" "ne" true }}
+      <li style="margin: 0.4rem 0;">
+        {{ $icon := "" }}
+        {{ $color := "inherit" }}
+        {{ $weight := "normal" }}
+
+        {{ if eq $design "nostr" }}
+          {{ if .IsSection }}
+            {{ $icon = printf `<span style="display:inline-block;width:1.5rem;height:1.5rem;vertical-align:middle;">%s</span>` (partial "stormmap/lightning-icon.html" (dict "color" "#a366ff")) | safeHTML }}
+            {{ $color = "#a366ff" }}
+          {{ else }}
+            {{ $icon = printf `<span style="display:inline-block;width:1.5rem;height:1.5rem;vertical-align:middle;">%s</span>` (partial "stormmap/lightning-icon.html" (dict "color" "#f7931a")) | safeHTML }}
+            {{ $color = "#f7931a" }}
+          {{ end }}
+          {{ $weight = "600" }}
+
+        {{ else if in (slice "color" "green" "red" "blue" "orange") $design }}
+          {{ $colorSet := index $designColors $design }}
+          {{ if .IsSection }}
+            {{ $color = $colorSet.section }}
+            {{ $icon = printf `<span style="display:inline-block;width:1.5rem;height:1.5rem;vertical-align:middle;">%s</span>` (partial "stormmap/folder-icon.html" (dict "color" $color)) | safeHTML }}
+            {{ $weight = "500" }}
+          {{ else }}
+            {{ $color = $colorSet.page }}
+            {{ $icon = printf `<span style="display:inline-block;width:1.5rem;height:1.5rem;vertical-align:middle;">%s</span>` (partial "stormmap/page-icon.html" (dict "color" $color)) | safeHTML }}
+          {{ end }}
+
+        {{ else }}
+          {{ if .IsSection }}
+            {{ $icon = "◻️" }}
+          {{ else }}
+            {{ $icon = "▪️" }}
+          {{ end }}
+        {{ end }}
+
+        {{ $icon }} <a href="{{ .Permalink }}" style="text-decoration: {{ if eq $design "minimal" }}underline{{ else }}none{{ end }}; color: {{ $color }}; font-weight: {{ $weight }};">{{ .Title }}</a>
+
+        {{ if .IsSection }}
+          {{ template "stormmap_recursive" dict "Pages" .Pages "Design" $design "DesignColors" $designColors }}
+        {{ end }}
+      </li>
+    {{ end }}
+  </ul>
+{{ end }}
+
+<ul style="list-style: none; padding-left: 1rem; margin: 0;">
+  {{ range where .Site.Sections "Params.hideStormMap" "ne" true }}
+    <li style="margin: 0.5rem 0;">
+      {{ $icon := "" }}
+      {{ $color := "inherit" }}
+      {{ $weight := "normal" }}
+
+      {{ if eq $design "nostr" }}
+        {{ $icon = printf `<span style="display:inline-block;width:1.5rem;height:1.5rem;vertical-align:middle;">%s</span>` (partial "stormmap/lightning-icon.html" (dict "color" "#a366ff")) | safeHTML }}
+        {{ $color = "#a366ff" }}
+        {{ $weight = "600" }}
+
+      {{ else if in (slice "color" "green" "red" "blue" "orange") $design }}
+        {{ $colorSet := index $designColors $design }}
+        {{ $color = $colorSet.section }}
+        {{ $icon = printf `<span style="display:inline-block;width:1.5rem;height:1.5rem;vertical-align:middle;">%s</span>` (partial "stormmap/folder-icon.html" (dict "color" $color)) | safeHTML }}
+        {{ $weight = "500" }}
+
+      {{ else }}
+        {{ $icon = "◻️" }}
+      {{ end }}
+
+      {{ $icon }} <a href="{{ .Permalink }}" style="text-decoration: {{ if eq $design "minimal" }}underline{{ else }}none{{ end }}; color: {{ $color }}; font-weight: {{ $weight }};">{{ .Title }}</a>
+
+      {{ template "stormmap_recursive" dict "Pages" .Pages "Design" $design "DesignColors" $designColors }}
+    </li>
+  {{ end }}
+</ul>
+
+{{ if $showBranding }}
+  <div style="margin-top: 1.5rem; font-size: 0.8rem; opacity: 0.5; text-align: center;">
+    <span style="vertical-align: middle; display: inline-block; width: 2rem; height: 2rem; margin-right: 0.4rem;">
+      {{ partial "stormmap/stormmap-logo.svg" . }}
+    </span>
+    <a href="https://rubenstorm.github.io/" style="text-decoration: none; color: inherit;">powered by <strong>Ruben Storm</strong></a>
+  </div>
+{{ end }}
